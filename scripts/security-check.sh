@@ -4,8 +4,6 @@
 # 基于工信部NVDB "六要六不要"安全建议
 #
 
-set -e
-
 # 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,6 +16,9 @@ CRITICAL=0
 WARNING=0
 PASSED=0
 
+# 错误处理 - 不退出，只记录
+set +e
+
 # 输出函数
 print_header() {
     echo -e "\n${BLUE}========================================${NC}"
@@ -27,17 +28,17 @@ print_header() {
 
 print_pass() {
     echo -e "${GREEN}[✓]${NC} $1"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
 }
 
 print_warn() {
     echo -e "${YELLOW}[!]${NC} $1"
-    ((WARNING++))
+    WARNING=$((WARNING + 1))
 }
 
 print_fail() {
     echo -e "${RED}[✗]${NC} $1"
-    ((CRITICAL++))
+    CRITICAL=$((CRITICAL + 1))
 }
 
 print_info() {
@@ -213,10 +214,10 @@ check_skills() {
     # 统计技能数量
     SKILL_COUNT=0
     if [ -d "$SKILLS_DIR" ]; then
-        SKILL_COUNT=$(find "$SKILLS_DIR" -name "SKILL.md" 2>/dev/null | wc -l)
+        SKILL_COUNT=$(find "$SKILLS_DIR" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
     fi
     if [ -d "$WORKSPACE_SKILLS" ]; then
-        WS_SKILL_COUNT=$(find "$WORKSPACE_SKILLS" -name "SKILL.md" 2>/dev/null | wc -l)
+        WS_SKILL_COUNT=$(find "$WORKSPACE_SKILLS" -name "SKILL.md" 2>/dev/null | wc -l | tr -d ' ')
         SKILL_COUNT=$((SKILL_COUNT + WS_SKILL_COUNT))
     fi
     
@@ -228,7 +229,7 @@ check_skills() {
         while IFS= read -r skill_file; do
             if grep -q "curl.*\|bash\|sh .*" "$skill_file" 2>/dev/null; then
                 print_warn "发现可能包含外部命令的技能: $skill_file"
-                ((SUSPICIOUS++))
+                SUSPICIOUS=$((SUSPICIOUS + 1))
             fi
         done < <(find "$SKILLS_DIR" -name "SKILL.md" 2>/dev/null)
     fi
