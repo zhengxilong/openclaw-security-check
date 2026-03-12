@@ -16,6 +16,9 @@ CRITICAL=0
 WARNING=0
 PASSED=0
 
+# OpenClaw最新版本（用于版本检查）
+LATEST_VERSION="2026.3.11"
+
 # 错误处理 - 不退出，只记录
 set +e
 
@@ -87,6 +90,23 @@ check_version() {
     if command_exists openclaw; then
         VERSION=$(openclaw --version 2>/dev/null || echo "unknown")
         print_info "当前OpenClaw版本: $VERSION"
+        print_info "最新OpenClaw版本: $LATEST_VERSION"
+        
+        # 版本比较
+        if [ "$VERSION" = "$LATEST_VERSION" ]; then
+            print_pass "已是最新版本"
+        elif [ "$VERSION" = "unknown" ]; then
+            print_warn "无法获取当前版本，建议检查安装"
+        else
+            print_warn "当前版本 ($VERSION) 不是最新版本 ($LATEST_VERSION)"
+            echo ""
+            echo -e "${YELLOW}建议更新命令:${NC}"
+            echo "  openclaw update"
+            echo "  # 或使用包管理器:"
+            echo "  npm update -g openclaw"
+            echo "  pnpm update -g openclaw"
+            echo "  bun update -g openclaw"
+        fi
         
         # 检查是否通过npm/pnpm/bun官方渠道安装
         if npm list -g openclaw >/dev/null 2>&1 || \
