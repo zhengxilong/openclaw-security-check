@@ -19,6 +19,36 @@ PASSED=0
 # 错误处理 - 不退出，只记录
 set +e
 
+# 配置选项
+RUN_DOCTOR=false
+
+# 解析命令行参数
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --doctor|--deep|-d)
+            RUN_DOCTOR=true
+            shift
+            ;;
+        --help|-h)
+            echo "用法: $0 [选项]"
+            echo ""
+            echo "选项:"
+            echo "  --doctor, --deep, -d    运行OpenClaw Doctor检查（交互式，默认跳过）"
+            echo "  --help, -h              显示帮助信息"
+            echo ""
+            echo "示例:"
+            echo "  $0                      # 运行基础安全检查（1-6步）"
+            echo "  $0 --doctor             # 运行完整检查（包括Doctor）"
+            exit 0
+            ;;
+        *)
+            echo "未知选项: $1"
+            echo "使用 --help 查看帮助"
+            exit 1
+            ;;
+    esac
+done
+
 # 输出函数
 print_header() {
     echo -e "\n${BLUE}========================================${NC}"
@@ -319,15 +349,32 @@ main() {
     echo "╚══════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
     
+    if [ "$RUN_DOCTOR" = true ]; then
+        print_info "运行模式: 完整检查（包括Doctor）"
+    else
+        print_info "运行模式: 基础检查（跳过Doctor，使用 --doctor 启用）"
+    fi
+    echo ""
+    
     check_version
     check_config
     check_network
     check_permissions
     check_skills
     check_logging
-    check_doctor
+    
+    # 第7步Doctor检查（可选，默认跳过）
+    if [ "$RUN_DOCTOR" = true ]; then
+        check_doctor
+    fi
     
     print_summary
+    
+    # 提示可以使用doctor
+    if [ "$RUN_DOCTOR" = false ]; then
+        echo ""
+        echo -e "${BLUE}提示:${NC} 如需运行OpenClaw Doctor深度检查，请使用: $0 --doctor"
+    fi
 }
 
 main "$@"
